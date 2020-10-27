@@ -43,14 +43,20 @@ This is the entire object that is read and written to files and passed around.
             "username" : "james123",
             "passwordHash" : "sgkjdlagkjdasg",
             "height" : 135,
-            "weight" : 80
+            "weight" : 80,
+            "preferences" : {
+                "color" : "red"
+            }
         },
         {
             "id" : 5566,
             "username" : "james1234",
             "passwordHash" : "sgkjdlagadfkjdasg",
             "height" : 15,
-            "weight" : 80
+            "weight" : 80,
+            "preferences" : {
+                "color" : "blue"
+            }
         }
     ]
 }
