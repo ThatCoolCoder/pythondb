@@ -6,3 +6,9 @@ class NoDatabaseProvided(Exception):
 
 class InvalidFieldPath(Exception):
     pass
+
+class FieldAlreadyTaken(Exception):
+    pass
+
+class DatabaseObjectCorrupted(Exception):
+    pass

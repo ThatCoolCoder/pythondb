@@ -1,4 +1,5 @@
 {
+    "name" : "testDb",
     "uniqueFields" : [
         ["id"],
         ["username"]

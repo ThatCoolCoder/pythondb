@@ -26,6 +26,7 @@ data = pythondb.openDatabase('users.json')
 This is the entire object that is read and written to files and passed around.
 ```json
 {
+    "name" : "testDb",
     "uniqueFields" : [
         ["id"],
         ["username"]
