@@ -5,6 +5,9 @@ from errors import *
 def doNothing(*args, **kwargs):
     pass
 
+# File stuff
+# ----------
+
 def openDatabase(filename):
     # Open and load the database at filename, return it as an object
 
@@ -30,11 +33,20 @@ def openDatabase(filename):
     except json.decoder.JSONDecodeError as err:
         raise FileCorrupted from err
 
+def saveDatabase(database, filename=None):
+    if filename is None:
+        filename = database['name'] + '.json'
+    try:
+        databaseStr = json.dumps(database)
+        files.write(filename, databaseStr)
+    except json.encoder.JsonEncodeError as err:
+        raise DatabaseObjectCorrupted from err
+
+# Get stuff
+# ---------
+
 def getDatabaseName(database):
     return database['name']
-
-def setDatabaseName(database, newName):
-    database['name'] = newName
 
 def getFieldContents(row, fieldPath):
     try:
@@ -44,6 +56,17 @@ def getFieldContents(row, fieldPath):
         return crntDir
     except Exception as err:
         raise InvalidFieldPath from err
+
+def getColumn(database, fieldPath):
+    if fieldPath not in database['uniqueFields'] or \
+        fieldPath not in database['nonUniqueFields']:
+        raise InvalidFieldPath
+
+    column = []
+    for crntRow in database['rows']:
+        column.append(getFieldContents(crntRow, fieldPath))
+    
+    return column
 
 def getRowFromUniqueField(database, fieldPath, fieldValue):
     # Find the row which has fieldPath set to fieldValue
@@ -76,17 +99,16 @@ def getRowsFromField(database, fieldPath, fieldValue):
     
     return rows
 
+# Set stuff
+# ---------
+
+def setDatabaseName(database, newName):
+    database['name'] = newName
+
 def setField(database, row, fieldPath, fieldValue):
     if fieldPath in database['uniqueFields']:
-        # Check if the field of that value has already been taken - 
-        # they need to be unique
-        fieldTaken = False
-        for row in database['rows']:
-            if getFieldContents(row, fieldPath) == fieldValue:
-                fieldTaken = True;
-                break
-        
-        if fieldTaken:
+        existingValues = getColumn(database, fieldPath)
+        if fieldValue in existingValues:
             raise FieldAlreadyTaken
         else:
             # Navigate to the dir containing the field
@@ -100,11 +122,53 @@ def setField(database, row, fieldPath, fieldValue):
     else:
         raise InvalidFieldPath
 
-def saveDatabase(database, filename=None):
-    if filename is None:
-        filename = database['name'] + '.json'
-    try:
-        databaseStr = json.dumps(database)
-        files.write(filename, databaseStr)
-    except json.encoder.JsonEncodeError as err:
-        raise DatabaseObjectCorrupted from err
+# Add stuff
+# ---------
+
+def createRow(database, rowContents):
+    # Row contents is in the form:
+    # [(fieldPath, value), (fieldPath, value)]
+    # eg:
+    # [ (['username'], 'pete'), (['color'], 'red') ] 
+
+    row = {}
+    # Set the keys and values of the row object
+    for fieldSet in rowContents:
+        fieldPath, value = fieldSet
+        print(fieldPath, value)
+
+        # Check if the fieldPath is a valid field
+        if fieldPath in database['uniqueFields'] or \
+            fieldPath in database['nonUniqueFields']:
+            setField(database, row, fieldPath, value)
+        else:
+            raise InvalidFieldPath
+    
+    # Now check if the row has any duplicate unique fields
+    if not canAddRow(database, row):
+        raise FieldAlreadyTaken
+    
+    return row
+
+def addRow(database, row):
+    # somehow create the row
+    
+    if canAddRow(database, row):
+        database['rows'].append(row)
+    else:
+        raise FieldAlreadyTaken
+
+# Other
+# -----
+
+def canAddRow(database, row):
+    # Check whether any of the row's unique fields are not actually unique
+
+    duplicateFieldFound = False
+    for fieldPath in database['uniqueFields']:
+        column = getColumn(database, fieldPath)
+        if getFieldContents(row, fieldPath) in column:
+            duplicateFieldFound = True
+            break
+    
+    return duplicateFieldFound
