@@ -1,6 +1,7 @@
 import simpleFileManager as files
 import json
 from errors import *
+import re
 
 def doNothing(*args, **kwargs):
     pass
@@ -48,27 +49,32 @@ def saveDatabase(database, filename=None):
 def getDatabaseName(database):
     return database['name']
 
-def getFieldContents(row, fieldPath):
+def fieldPathToFieldPathList(fieldPath):
+    return re.split('(?<!\\\)[/]', fieldPath)
+
+def getFieldContents(row, fieldPath=None, fieldPathList=None):
     try:
+        if fieldPathList is None:
+            fieldPathList = fieldPathToFieldPathList(fieldPath)
         crntDir = row
-        for item in fieldPath:
+        for item in fieldPathList:
             crntDir = crntDir[item]
         return crntDir
     except Exception as err:
         raise InvalidFieldPath from err
 
 def getColumn(database, fieldPath):
-    if fieldPath not in database['uniqueFields'] or \
-        fieldPath not in database['nonUniqueFields']:
+    if (fieldPath not in database['uniqueFields']) and \
+        (fieldPath not in database['nonUniqueFields']):
         raise InvalidFieldPath
 
     column = []
     for crntRow in database['rows']:
-        column.append(getFieldContents(crntRow, fieldPath))
+        column.append(getFieldContents(crntRow, fieldPath=fieldPath))
     
     return column
 
-def getRowFromUniqueField(database, fieldPath, fieldValue):
+def getRowByUniqueField(database, fieldPath, fieldValue):
     # Find the row which has fieldPath set to fieldValue
 
     # If the field doesn't exist, exit
@@ -78,14 +84,14 @@ def getRowFromUniqueField(database, fieldPath, fieldValue):
     row = None
 
     for crntRow in database['rows']:
-        if getFieldContents(crntRow, fieldPath) == fieldValue:
+        if getFieldContents(crntRow, fieldPath=fieldPath) == fieldValue:
             row = crntRow
             break
     
     return row
 
         
-def getRowsFromField(database, fieldPath, fieldValue):
+def getRowsByField(database, fieldPath, fieldValue):
     # Find all of the fields in which fieldPath is set to fieldValue
     
     # If the field doesn't exist, exit
@@ -105,20 +111,22 @@ def getRowsFromField(database, fieldPath, fieldValue):
 def setDatabaseName(database, newName):
     database['name'] = newName
 
-def setField(database, row, fieldPath, fieldValue):
+def setFieldValue(database, row, fieldPath, fieldValue):
     if fieldPath in database['uniqueFields']:
         existingValues = getColumn(database, fieldPath)
         if fieldValue in existingValues:
             raise FieldAlreadyTaken
         else:
             # Navigate to the dir containing the field
-            containingDir = getFieldContents(row, fieldPath[:-1])
+            fieldPathList = fieldPathToFieldPathList(fieldPath)
+            containingDir = getFieldContents(row, fieldPathList=fieldPathList[:-1])
             # Then set the last part (the actual field) to the value
-            containingDir[fieldPath[-1]] = fieldValue
+            containingDir[fieldPathList[-1]] = fieldValue
             
     elif fieldPath in database['nonUniqueFields']:
-        containingDir = getFieldContents(row, fieldPath[:-1])
-        containingDir[fieldPath[-1]] = fieldValue
+        fieldPathList = fieldPathToFieldPathList(fieldPath)
+        containingDir = getFieldContents(row, fieldPathList=fieldPathList[:-1])
+        containingDir[fieldPathList[-1]] = fieldValue
     else:
         raise InvalidFieldPath
 
@@ -140,7 +148,7 @@ def createRow(database, rowContents):
         # Check if the fieldPath is a valid field
         if fieldPath in database['uniqueFields'] or \
             fieldPath in database['nonUniqueFields']:
-            setField(database, row, fieldPath, value)
+            setFieldValue(database, row, fieldPath, value)
         else:
             raise InvalidFieldPath
     
@@ -167,7 +175,7 @@ def canAddRow(database, row):
     duplicateFieldFound = False
     for fieldPath in database['uniqueFields']:
         column = getColumn(database, fieldPath)
-        if getFieldContents(row, fieldPath) in column:
+        if getFieldContents(row, fieldPath=fieldPath) in column:
             duplicateFieldFound = True
             break
     
