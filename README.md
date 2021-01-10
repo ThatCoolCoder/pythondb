@@ -1,14 +1,17 @@
 # pythondb
-## A python database lib because I'm too lazy to learn sql or anything
+## A python database library because I'm too lazy to learn sql or anything
 
-I will change the name. `pythondb` is the working title. It will remain the repo name but users will be shown a different name.
+pythondb is a working title. It will remain the repo name but users will be shown a different name.
 
-#### Some quick links
-- [Public functions for you to code with](publicFunctions.md)
+#### Contents:
+- [Getting started](gettingStarted.md)
+- [User reference](userReference.md)
+- [Programming standards](programmingStandards.md)
+- [Database structure and example database](databaseStructure.md)
 
 #### Fields
 (Note: the 'example below' is the example in [Database obj structure](#database-obj-structure))
-I like the idea of nested fields. I don't there to be a necessity for multiple databases Because this is stored as json, you can nest however much you wish to. Therefore, you can have multi level fields such as the `preferences` field in the example below. Each field of the database is actually a list (in both the file and the 'api') which contains steps from how to get from the row to the field data.
+I like the idea of nested fields. I don't there to be a necessity for multiple databases. Because this is stored as json, you can nest however much you wish to. Therefore, you can have multi level fields such as the `preferences` field in the example below. Each field of the database is actually a list (in both the file and the 'api') which contains steps from how to get from the row to the field data.
 
 To get to the `height` field of a user in the example below, you simply navigate to `height`, so the path (and by extension field name) is `['height']`. The call to `pythondb.getRowsFromField` would be `pythondb.getRowsFromField(data=aDatabaseObject, field=['height'])`.
 
