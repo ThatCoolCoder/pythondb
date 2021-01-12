@@ -184,14 +184,11 @@ def createRow(database, rowContents):
 
     row = {}
     # Set the keys and values of the row object
-    for fieldSet in rowContents:
-        fieldPath, value = fieldSet
-        print(fieldPath, value)
-
+    for fieldPath in rowContents:
         # Check if the fieldPath is a valid field
         if fieldPath in database['uniqueFields'] or \
             fieldPath in database['nonUniqueFields']:
-            setFieldValue(database, row, fieldPath, value)
+            setFieldValue(database, row, fieldPath, rowContents[fieldPath])
         else:
             raise InvalidFieldPath
     
@@ -217,11 +214,11 @@ def canAddRow(database, row):
     # Check whether the values any of the row's unique fields are already in the database
     # (private)
 
-    duplicateFieldFound = False
+    noDuplicateFields = True
     for fieldPath in database['uniqueFields']:
         column = getColumn(database, fieldPath)
         if getFieldContents(row, fieldPath=fieldPath) in column:
-            duplicateFieldFound = True
+            noDuplicateFields = False
             break
     
-    return duplicateFieldFound
+    return noDuplicateFields

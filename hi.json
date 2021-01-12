@@ -1,0 +1,1 @@
+{"name": "hi", "uniqueFields": ["name"], "nonUniqueFields": ["age", "preferences", "preferences/color", "preferences/color"], "rows": [{"name": "me", "age": 47, "preferences": {"color": "red"}, "preferences\\/color": "not a color"}]}
