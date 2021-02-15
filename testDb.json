@@ -1,15 +1,15 @@
 {
     "name" : "testDb",
     "uniqueFields" : [
-        ["id"],
-        ["username"]
+        "id",
+        "username"
     ],
     "nonUniqueFields" : [
-        ["passwordHash"],
-        ["height"],
-        ["weight"],
-        ["preferences"],
-        ["preferences", "color"]
+        "passwordHash",
+        "height",
+        "weight",
+        "preferences",
+        "preferences/color"
     ],
     "rows" : [
         {
@@ -23,11 +23,21 @@
             }
         },
         {
-            "id" : 5566,
+            "id" : 666,
             "username" : "james1234",
             "passwordHash" : "sgkjdlagadfkjdasg",
             "height" : 15,
             "weight" : 80,
+            "preferences" : {
+                "color" : "blue"
+            }
+        },
+        {
+            "id" : 777,
+            "username" : "james12345",
+            "passwordHash" : "sgkjdlagadfkjdasg",
+            "height" : 150,
+            "weight" : 8,
             "preferences" : {
                 "color" : "blue"
             }

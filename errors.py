@@ -4,10 +4,13 @@ class FileCorrupted(Exception):
 class NoDatabaseProvided(Exception):
     pass
 
+class NoRowProvided(Exception):
+    pass
+
 class InvalidFieldPath(Exception):
     pass
 
-class FieldAlreadyTaken(Exception):
+class FieldDuplicated(Exception):
     pass
 
 class DatabaseObjectCorrupted(Exception):

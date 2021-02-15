@@ -1,9 +1,32 @@
-import simpleFileManager as files
 import json
-from errors import *
+import re
+import copy
 
-def doNothing(*args, **kwargs):
-    pass
+try:
+    import simpleFileManager as files
+except:
+    print('Error: simpleFileManager.py was not found by pythondb.py')
+    quit()
+
+try:
+    from errors import *
+except:
+    print('Error: errors.py was not found by pythondb.py')
+    quit()
+
+def createDatabase(name, uniqueFields=[], nonUniqueFields=[], rows=[]):
+    # (public)
+
+    db = {
+        'name' : name,
+        'uniqueFields' : copy.deepcopy(uniqueFields),
+        'nonUniqueFields' : copy.deepcopy(nonUniqueFields),
+        'rows' : []
+    }
+    # Add the rows here one by one, to use the inbuilt error checker in appendRow()
+    for row in rows:
+        appendRow(db, copy.deepcopy(row))
+    return db
 
 # File stuff
 # ----------
@@ -34,6 +57,9 @@ def openDatabase(filename):
         raise FileCorrupted from err
 
 def saveDatabase(database, filename=None):
+    # Save the database to filename
+    # If filename is None, then it will be saved to: [the name of the database] + 'json'
+
     if filename is None:
         filename = database['name'] + '.json'
     try:
@@ -46,30 +72,45 @@ def saveDatabase(database, filename=None):
 # ---------
 
 def getDatabaseName(database):
+    # (public)
     return database['name']
 
-def getFieldContents(row, fieldPath):
+def fieldPathToDirectoryList(fieldPath):
+    # Turn the field path into a list of directions
+    # (private)
+
+    return re.split('(?<!\\\)[/]', fieldPath)
+
+def getFieldContents(row, fieldPath=None, directoryList=None):
+    # Get the contents of the field at fieldPath in row
+    # Pass in either a fieldPath or a directoryList
+    # (public)
     try:
+        if directoryList is None:
+            directoryList = fieldPathToDirectoryList(fieldPath)
         crntDir = row
-        for item in fieldPath:
+        for item in directoryList:
             crntDir = crntDir[item]
         return crntDir
     except Exception as err:
         raise InvalidFieldPath from err
 
 def getColumn(database, fieldPath):
-    if fieldPath not in database['uniqueFields'] or \
-        fieldPath not in database['nonUniqueFields']:
+    # Get a list of all of the items in the fieldPath column
+    # (public)
+    if (fieldPath not in database['uniqueFields']) and \
+        (fieldPath not in database['nonUniqueFields']):
         raise InvalidFieldPath
 
     column = []
     for crntRow in database['rows']:
-        column.append(getFieldContents(crntRow, fieldPath))
+        column.append(getFieldContents(crntRow, fieldPath=fieldPath))
     
     return column
 
-def getRowFromUniqueField(database, fieldPath, fieldValue):
+def getRowByUniqueField(database, fieldPath, fieldValue):
     # Find the row which has fieldPath set to fieldValue
+    # (public)
 
     # If the field doesn't exist, exit
     if fieldPath not in database['uniqueFields']:
@@ -78,15 +119,16 @@ def getRowFromUniqueField(database, fieldPath, fieldValue):
     row = None
 
     for crntRow in database['rows']:
-        if getFieldContents(crntRow, fieldPath) == fieldValue:
+        if getFieldContents(crntRow, fieldPath=fieldPath) == fieldValue:
             row = crntRow
             break
     
     return row
 
         
-def getRowsFromField(database, fieldPath, fieldValue):
+def getRowsByField(database, fieldPath, fieldValue):
     # Find all of the fields in which fieldPath is set to fieldValue
+    # (public)
     
     # If the field doesn't exist, exit
     if fieldPath not in database['nonUniqueFields']:
@@ -103,22 +145,27 @@ def getRowsFromField(database, fieldPath, fieldValue):
 # ---------
 
 def setDatabaseName(database, newName):
+    # (public)
     database['name'] = newName
 
-def setField(database, row, fieldPath, fieldValue):
+def setFieldValue(database, row, fieldPath, fieldValue):
+    # (public)
+    # set the value of the field at row in database
     if fieldPath in database['uniqueFields']:
         existingValues = getColumn(database, fieldPath)
         if fieldValue in existingValues:
-            raise FieldAlreadyTaken
+            raise FieldDuplicated
         else:
             # Navigate to the dir containing the field
-            containingDir = getFieldContents(row, fieldPath[:-1])
+            directoryList = fieldPathToDirectoryList(fieldPath)
+            containingDir = getFieldContents(row, directoryList=directoryList[:-1])
             # Then set the last part (the actual field) to the value
-            containingDir[fieldPath[-1]] = fieldValue
+            containingDir[directoryList[-1]] = fieldValue
             
     elif fieldPath in database['nonUniqueFields']:
-        containingDir = getFieldContents(row, fieldPath[:-1])
-        containingDir[fieldPath[-1]] = fieldValue
+        directoryList = fieldPathToDirectoryList(fieldPath)
+        containingDir = getFieldContents(row, directoryList=directoryList[:-1])
+        containingDir[directoryList[-1]] = fieldValue
     else:
         raise InvalidFieldPath
 
@@ -127,48 +174,80 @@ def setField(database, row, fieldPath, fieldValue):
 
 def createRow(database, rowContents):
     # Row contents is in the form:
-    # [(fieldPath, value), (fieldPath, value)]
+    # {
+    #   fieldPath : value,
+    # }
     # eg:
-    # [ (['username'], 'pete'), (['color'], 'red') ] 
+    # {
+    #   'username' : 'james',
+    #   'password' : 123
+    # }
+    # Note that this does not add the row to the database, use appendRow() for that
+    # (public)
 
     row = {}
     # Set the keys and values of the row object
-    for fieldSet in rowContents:
-        fieldPath, value = fieldSet
-        print(fieldPath, value)
-
+    for fieldPath in rowContents:
         # Check if the fieldPath is a valid field
         if fieldPath in database['uniqueFields'] or \
             fieldPath in database['nonUniqueFields']:
-            setField(database, row, fieldPath, value)
+            setFieldValue(database, row, fieldPath, rowContents[fieldPath])
         else:
             raise InvalidFieldPath
     
     # Now check if the row has any duplicate unique fields
     if not canAddRow(database, row):
-        raise FieldAlreadyTaken
+        raise FieldDuplicated
     
     return row
 
-def addRow(database, row):
-    # somehow create the row
+def appendRow(database, row):
+    # Append the row to the database
+    # (public)
     
     if canAddRow(database, row):
         database['rows'].append(row)
     else:
-        raise FieldAlreadyTaken
+        raise FieldDuplicated
+
+def insertRow(database, row, index=-1):
+    # Insert the row into the database at index
+    # If index is unspecified, append it to the end
+    # (public)
+    
+    if canAddRow(database, row):
+        database['rows'].insert(index, row)
+    else:
+        raise FieldDuplicated
 
 # Other
 # -----
 
 def canAddRow(database, row):
-    # Check whether any of the row's unique fields are not actually unique
+    # Check whether the values any of the row's unique fields are already in the database
+    # (private)
 
-    duplicateFieldFound = False
+    noDuplicateFields = True
     for fieldPath in database['uniqueFields']:
         column = getColumn(database, fieldPath)
-        if getFieldContents(row, fieldPath) in column:
-            duplicateFieldFound = True
+        if getFieldContents(row, fieldPath=fieldPath) in column:
+            noDuplicateFields = False
             break
     
-    return duplicateFieldFound
+    return noDuplicateFields
+
+def removeRow(database, row=None, index=None):
+    # If row is specified, remove it from the db
+    # If index is specified, remove the row at index
+    # (public)
+
+    if row is not None:
+        database['rows'].remove(row)
+        del row # clear up
+    
+    elif index is not None:
+        del database['rows'][index]
+        del row # clear up
+    
+    else:
+        raise NoRowProvided
