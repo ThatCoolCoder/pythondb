@@ -4,6 +4,9 @@ class FileCorrupted(Exception):
 class NoDatabaseProvided(Exception):
     pass
 
+class NoRowProvided(Exception):
+    pass
+
 class InvalidFieldPath(Exception):
     pass
 

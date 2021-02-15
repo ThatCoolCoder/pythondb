@@ -2,17 +2,20 @@ import json
 import re
 import copy
 
-import simpleFileManager as files
+try:
+    import simpleFileManager as files
+except:
+    print('Error: simpleFileManager.py was not found by pythondb.py')
+    quit()
 
-from errors import *
-
-def doNothing(*args, **kwargs):
-    pass
+try:
+    from errors import *
+except:
+    print('Error: errors.py was not found by pythondb.py')
+    quit()
 
 def createDatabase(name, uniqueFields=[], nonUniqueFields=[], rows=[]):
     # (public)
-    # NOT TESTED
-    print('Warning! this function has not been tested. Use at your own risk!')
 
     db = {
         'name' : name,
@@ -207,6 +210,16 @@ def appendRow(database, row):
     else:
         raise FieldDuplicated
 
+def insertRow(database, row, index=-1):
+    # Insert the row into the database at index
+    # If index is unspecified, append it to the end
+    # (public)
+    
+    if canAddRow(database, row):
+        database['rows'].insert(index, row)
+    else:
+        raise FieldDuplicated
+
 # Other
 # -----
 
@@ -222,3 +235,19 @@ def canAddRow(database, row):
             break
     
     return noDuplicateFields
+
+def removeRow(database, row=None, index=None):
+    # If row is specified, remove it from the db
+    # If index is specified, remove the row at index
+    # (public)
+
+    if row is not None:
+        database['rows'].remove(row)
+        del row # clear up
+    
+    elif index is not None:
+        del database['rows'][index]
+        del row # clear up
+    
+    else:
+        raise NoRowProvided
