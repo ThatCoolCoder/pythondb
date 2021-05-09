@@ -4,10 +4,10 @@
 pythondb is a working title. It will remain the repo name but users will be shown a different name.
 
 #### Contents:
-- [Getting started](gettingStarted.md)
-- [User reference](userReference.md)
-- [Programming standards](programmingStandards.md)
-- [Database structure and example database](databaseStructure.md)
+- [Getting started](documentation/gettingStarted.md)
+- [User reference](documentation/userReference.md)
+- [Programming standards](documentation/programmingStandards.md)
+- [Database structure and example database](documentation/databaseStructure.md)
 
 #### Fields
 (Note: the 'example below' is the example in [Database obj structure](#database-obj-structure))

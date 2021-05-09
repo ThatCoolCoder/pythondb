@@ -2,17 +2,8 @@ import json
 import re
 import copy
 
-try:
-    import simpleFileManager as files
-except:
-    print('Error: simpleFileManager.py was not found by pythondb.py')
-    quit()
-
-try:
-    from errors import *
-except:
-    print('Error: errors.py was not found by pythondb.py')
-    quit()
+import pythondb.errors as errors
+import pythondb.simpleFileManager as files
 
 def createDatabase(name, uniqueFields=[], nonUniqueFields=[], rows=[]):
     # (public)
@@ -54,7 +45,7 @@ def openDatabase(filename):
         database = json.loads(stringData)
         return database
     except json.decoder.JSONDecodeError as err:
-        raise FileCorrupted from err
+        raise errors.FileCorrupted from err
 
 def saveDatabase(database, filename=None):
     # Save the database to filename
@@ -65,8 +56,8 @@ def saveDatabase(database, filename=None):
     try:
         databaseStr = json.dumps(database)
         files.write(filename, databaseStr)
-    except json.encoder.JsonEncodeError as err:
-        raise DatabaseObjectCorrupted from err
+    except:
+        raise
 
 # Get stuff
 # ---------
@@ -93,14 +84,14 @@ def getFieldContents(row, fieldPath=None, directoryList=None):
             crntDir = crntDir[item]
         return crntDir
     except Exception as err:
-        raise InvalidFieldPath from err
+        raise errors.InvalidFieldPath from err
 
 def getColumn(database, fieldPath):
     # Get a list of all of the items in the fieldPath column
     # (public)
     if (fieldPath not in database['uniqueFields']) and \
         (fieldPath not in database['nonUniqueFields']):
-        raise InvalidFieldPath
+        raise errors.InvalidFieldPath
 
     column = []
     for crntRow in database['rows']:
@@ -114,7 +105,7 @@ def getRowByUniqueField(database, fieldPath, fieldValue):
 
     # If the field doesn't exist, exit
     if fieldPath not in database['uniqueFields']:
-        raise InvalidFieldPath
+        raise errors.InvalidFieldPath
 
     row = None
 
@@ -132,7 +123,7 @@ def getRowsByField(database, fieldPath, fieldValue):
     
     # If the field doesn't exist, exit
     if fieldPath not in database['nonUniqueFields']:
-        raise InvalidFieldPath
+        raise errors.InvalidFieldPath
 
     rows = []
     for crntRow in database['rows']:
@@ -154,7 +145,7 @@ def setFieldValue(database, row, fieldPath, fieldValue):
     if fieldPath in database['uniqueFields']:
         existingValues = getColumn(database, fieldPath)
         if fieldValue in existingValues:
-            raise FieldDuplicated
+            raise errors.FieldDuplicated
         else:
             # Navigate to the dir containing the field
             directoryList = fieldPathToDirectoryList(fieldPath)
@@ -167,7 +158,7 @@ def setFieldValue(database, row, fieldPath, fieldValue):
         containingDir = getFieldContents(row, directoryList=directoryList[:-1])
         containingDir[directoryList[-1]] = fieldValue
     else:
-        raise InvalidFieldPath
+        raise errors.InvalidFieldPath
 
 # Add stuff
 # ---------
@@ -193,11 +184,11 @@ def createRow(database, rowContents):
             fieldPath in database['nonUniqueFields']:
             setFieldValue(database, row, fieldPath, rowContents[fieldPath])
         else:
-            raise InvalidFieldPath
+            raise errors.InvalidFieldPath
     
     # Now check if the row has any duplicate unique fields
     if not canAddRow(database, row):
-        raise FieldDuplicated
+        raise errors.FieldDuplicated
     
     return row
 
@@ -208,7 +199,7 @@ def appendRow(database, row):
     if canAddRow(database, row):
         database['rows'].append(row)
     else:
-        raise FieldDuplicated
+        raise errors.FieldDuplicated
 
 def insertRow(database, row, index=-1):
     # Insert the row into the database at index
@@ -218,7 +209,7 @@ def insertRow(database, row, index=-1):
     if canAddRow(database, row):
         database['rows'].insert(index, row)
     else:
-        raise FieldDuplicated
+        raise errors.FieldDuplicated
 
 # Other
 # -----
@@ -250,4 +241,4 @@ def removeRow(database, row=None, index=None):
         del row # clear up
     
     else:
-        raise NoRowProvided
+        raise errors.NoRowProvided

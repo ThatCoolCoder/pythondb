@@ -1,0 +1,1 @@
+{"name": "db", "uniqueFields": ["name", "age"], "nonUniqueFields": ["height", "preferences", "preferences/color", "test\\/thing\\/"], "rows": [{"name": "me", "age": 13, "height": 122, "preferences": {"color": "red"}, "test\\/thing\\/": "testy"}]}makeitbreak
